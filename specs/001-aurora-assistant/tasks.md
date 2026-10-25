@@ -144,7 +144,7 @@ evaluator flow (E1..E15) is the acceptance check, run against the live API.
 
 **Independent Test**: E12
 
-- [ ] T022 [US4] Implement `src/aurora/regulation.py`: parse `dados/regulamento.md` by `## Capítulo` headings into 14 chapters `{id (I..XIV), titulo, texto}` at import
+- [x] T022 [US4] Implement `src/aurora/regulation.py`: parse `dados/regulamento.md` by `## Capítulo` headings into 14 chapters `{id (I..XIV), titulo, texto}` at import
 - [ ] T023 [US4] Add tool `consultar_regulamento(capitulo)` in `src/aurora/tools.py`: id validated against the parsed set, returns that chapter only (plan rule 3)
 - [ ] T024 [US4] Add specialist `regulamento` in `src/aurora/agents.py`: chapter ids and titles in its `instruction` only (not `description`), reply in PT-BR, callback attached; register in root; confirm root instruction has no regulation text
 - [ ] T025 [US4] Run E12: closing time 20h on Sundays; events contain only Chapter IV text
