@@ -107,9 +107,9 @@ evaluator flow (E1..E15) is the acceptance check, run against the live API.
 
 **Independent Test**: E3, E4, E10
 
-- [ ] T014 [US2] Implement `src/aurora/output_filter.py` `after_model_callback`: rewrite text parts only (never `function_call` args); load from the DB on every call the reservation codes (any status), visitor names and resident names of apartments other than `state["apartamento"]`, plus other apartment numbers matched standalone (not inside other numbers or codes); replace each with `[dado restrito]` (plan rule 5)
+- [x] T014 [US2] Implement `src/aurora/output_filter.py` `after_model_callback`: rewrite text parts only (never `function_call` args); load from the DB on every call the reservation codes (any status), visitor names and resident names of apartments other than `state["apartamento"]`, plus other apartment numbers matched standalone (not inside other numbers or codes); replace each with `[dado restrito]` (plan rule 5)
 - [ ] T015 [US2] Attach the callback to root and every specialist in `src/aurora/agents.py`
-- [ ] T016 [P] [US2] `tests/test_output_filter.py::test_redacts_other_apartments` — Test: new, because distinct contract (redaction rules): one parametrised test of `redact(text, terms=["RSV-4821", "Marina Duarte"], numbers=["302"])` over literal cases: `RSV-4821` and `Marina Duarte` replaced by `[dado restrito]`; standalone `302` replaced; `2030-03-02`, `AUR-0302` and `101` kept (callback wiring and function_call untouched-ness are covered by live E3/E4/E10, not here)
+- [x] T016 [P] [US2] `tests/test_output_filter.py::test_redacts_other_apartments` — Test: new, because distinct contract (redaction rules): one parametrised test of `redact(text, terms=["RSV-4821", "Marina Duarte"], numbers=["302"])` over literal cases: `RSV-4821` and `Marina Duarte` replaced by `[dado restrito]`; standalone `302` replaced; `2030-03-02`, `AUR-0302` and `101` kept (callback wiring and function_call untouched-ness are covered by live E3/E4/E10, not here)
 - [ ] T017 [US2] Run E3, E4, E10 and fix until they pass
 
 **Checkpoint**: US1 + US2 pass
