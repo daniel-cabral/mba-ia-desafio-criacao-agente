@@ -95,7 +95,7 @@ evaluator flow (E1..E15) is the acceptance check, run against the live API.
 - [x] T010 [US1] Add reservation tools in `src/aurora/tools.py`: `verificar_disponibilidade(area, data)` → only `livre`/`ocupada`; `listar_minhas_reservas()`; `reservar_area(area, data)`: validate area id and `AAAA-MM-DD`, check availability first (occupied → refusal, no confirmation, FR-012a), fee 0 → insert, fee > 0 → `request_confirmation(payload={"acao": "reservar_area", "detalhes": {"area", "data"}})` with `skip_summarization`, on re-run insert only if `tool_confirmation.confirmed`, denial → no write; `cancelar_reserva(codigo=None, area=None, data=None)` own apartment only, not found → "não encontrada entre as suas reservas"; apartment always from `tool_context.state["apartamento"]`, no apartment argument
 - [x] T011 [US1] Add specialist `reservas` in `src/aurora/agents.py` with the T010 tools; instruction: reply in PT-BR, call the action tool directly, never ask "você confirma?" in chat (plan rule 6); register in root `sub_agents`
 - [x] T012 [P] [US1] `tests/test_store.py::test_concurrent_insert_same_area_date` — Test: new, because distinct contract (write-time exclusivity, the only lock on G5 below the API): two concurrent `store` inserts for `salao-de-festas`/`2030-05-11` → exactly one active row, the other a refusal, no exception; plus a cancelled row keeps its code and a new insert gets a different code (literal expected codes)
-- [ ] T013 [US1] Run E5..E9 against the live API and fix until they pass
+- [x] T013 [US1] Run E5..E9 against the live API and fix until they pass
 
 **Checkpoint**: US1 works end to end
 
@@ -110,7 +110,7 @@ evaluator flow (E1..E15) is the acceptance check, run against the live API.
 - [x] T014 [US2] Implement `src/aurora/output_filter.py` `after_model_callback`: rewrite text parts only (never `function_call` args); load from the DB on every call the reservation codes (any status), visitor names and resident names of apartments other than `state["apartamento"]`, plus other apartment numbers matched standalone (not inside other numbers or codes); replace each with `[dado restrito]` (plan rule 5)
 - [x] T015 [US2] Attach the callback to root and every specialist in `src/aurora/agents.py`
 - [x] T016 [P] [US2] `tests/test_output_filter.py::test_redacts_other_apartments` — Test: new, because distinct contract (redaction rules): one parametrised test of `redact(text, terms=["RSV-4821", "Marina Duarte"], numbers=["302"])` over literal cases: `RSV-4821` and `Marina Duarte` replaced by `[dado restrito]`; standalone `302` replaced; `2030-03-02`, `AUR-0302` and `101` kept (callback wiring and function_call untouched-ness are covered by live E3/E4/E10, not here)
-- [ ] T017 [US2] Run E3, E4, E10 and fix until they pass
+- [x] T017 [US2] Run E3, E4, E10 and fix until they pass
 
 **Checkpoint**: US1 + US2 pass
 
@@ -124,7 +124,7 @@ evaluator flow (E1..E15) is the acceptance check, run against the live API.
 
 - [x] T018 [US3] Add visitor tools in `src/aurora/tools.py`: `listar_meus_visitantes()`; `autorizar_visitante(nome, data)` always via `request_confirmation(payload={"acao": "autorizar_visitante", "detalhes": {"nome", "data"}})`, insert only if confirmed; apartment from state
 - [x] T019 [US3] Add specialist `visitantes` in `src/aurora/agents.py` (same instruction rules as T011: PT-BR, no chat confirmation; callback attached); register in root
-- [ ] T020 [US3] Run E11 and fix until it passes
+- [x] T020 [US3] Run E11 and fix until it passes
 
 ---
 
@@ -134,7 +134,7 @@ evaluator flow (E1..E15) is the acceptance check, run against the live API.
 
 **Independent Test**: E1 from a fresh clone
 
-- [ ] T021 [US7] In a fresh local clone (`git clone <repo path> <scratchpad dir>`, after committing the work so far): copy `.env.example` to `.env`, `uv sync`, `uv run aurora-restore`, `uv run aurora-api`; check E1; then modify data, rerun restore and confirm seed state
+- [x] T021 [US7] In a fresh local clone (`git clone <repo path> <scratchpad dir>`, after committing the work so far): copy `.env.example` to `.env`, `uv sync`, `uv run aurora-restore`, `uv run aurora-api`; check E1; then modify data, rerun restore and confirm seed state
 
 ---
 
@@ -147,7 +147,7 @@ evaluator flow (E1..E15) is the acceptance check, run against the live API.
 - [x] T022 [US4] Implement `src/aurora/regulation.py`: parse `dados/regulamento.md` by `## Capítulo` headings into 14 chapters `{id (I..XIV), titulo, texto}` at import
 - [x] T023 [US4] Add tool `consultar_regulamento(capitulo)` in `src/aurora/tools.py`: id validated against the parsed set, returns that chapter only (plan rule 3)
 - [x] T024 [US4] Add specialist `regulamento` in `src/aurora/agents.py`: chapter ids and titles in its `instruction` only (not `description`), reply in PT-BR, callback attached; register in root; confirm root instruction has no regulation text
-- [ ] T025 [US4] Run E12: closing time 20h on Sundays; events contain only Chapter IV text
+- [x] T025 [US4] Run E12: closing time 20h on Sundays; events contain only Chapter IV text
 
 ---
 
@@ -157,7 +157,7 @@ evaluator flow (E1..E15) is the acceptance check, run against the live API.
 
 **Independent Test**: E13
 
-- [ ] T026 [US5] Run E13 (stop with Ctrl+C, same start command, no restore); also leave a confirmation pending, restart, approve, confirm single execution (constitution, Technical Constraints)
+- [x] T026 [US5] Run E13 (stop with Ctrl+C, same start command, no restore); also leave a confirmation pending, restart, approve, confirm single execution (constitution, Technical Constraints)
 
 ---
 
@@ -168,7 +168,7 @@ evaluator flow (E1..E15) is the acceptance check, run against the live API.
 **Independent Test**: E14
 
 - [x] T027 [US6] Stress offline, outside the repo, with the fake-LLM harness from research (`scratchpad/adk-src/probe.py` adapted to the real tools and DB): 20+ rounds of two concurrent approvals for the same area/date → always one reservation, both `200`, no "database is locked"; if it fails, apply the research R6 fallback (split DB files) with a PATCH amendment to the constitution
-- [ ] T028 [US6] Run E14 with two `curl` approvals joined by `&`
+- [x] T028 [US6] Run E14 with two `curl` approvals joined by `&`
 
 ---
 
@@ -178,7 +178,7 @@ evaluator flow (E1..E15) is the acceptance check, run against the live API.
 - [x] T030 Replace `README.md` with sections Arquitetura (each agent, responsibility, how invoked, why transfer and not AgentTool), Garantias (G1..G5: file + excerpt + why it does not depend on the model), Como rodar (prerequisites, `GEMINI_API_KEY`, `uv sync`, `uv run aurora-restore`, `uv run aurora-api`); every reference must point to existing code
 - [x] T031 Remove the Sync Impact Report comment from `.specify/memory/constitution.md`
 - [x] T032 Verify `dados/` is identical to upstream (`git diff upstream/main -- dados/` empty), no key versioned (`git ls-files` has no `.env`), `uv.lock` committed, ADK pinned
-- [ ] T033 Full run: `uv run pytest`, then `aurora-restore` and the complete evaluator flow E1..E15 in one pass, recording the total model calls (SC-007); commit in PT-BR on `main` and push to the fork
+- [x] T033 Full run: `uv run pytest`, then `aurora-restore` and the complete evaluator flow E1..E15 in one pass, recording the total model calls (SC-007); commit in PT-BR on `main` and push to the fork
 
 ---
 
