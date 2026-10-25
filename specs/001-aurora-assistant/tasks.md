@@ -92,7 +92,7 @@ evaluator flow (E1..E15) is the acceptance check, run against the live API.
 
 **Independent Test**: E5, E6, E7, E8, E9
 
-- [ ] T010 [US1] Add reservation tools in `src/aurora/tools.py`: `verificar_disponibilidade(area, data)` → only `livre`/`ocupada`; `listar_minhas_reservas()`; `reservar_area(area, data)`: validate area id and `AAAA-MM-DD`, check availability first (occupied → refusal, no confirmation, FR-012a), fee 0 → insert, fee > 0 → `request_confirmation(payload={"acao": "reservar_area", "detalhes": {"area", "data"}})` with `skip_summarization`, on re-run insert only if `tool_confirmation.confirmed`, denial → no write; `cancelar_reserva(codigo=None, area=None, data=None)` own apartment only, not found → "não encontrada entre as suas reservas"; apartment always from `tool_context.state["apartamento"]`, no apartment argument
+- [x] T010 [US1] Add reservation tools in `src/aurora/tools.py`: `verificar_disponibilidade(area, data)` → only `livre`/`ocupada`; `listar_minhas_reservas()`; `reservar_area(area, data)`: validate area id and `AAAA-MM-DD`, check availability first (occupied → refusal, no confirmation, FR-012a), fee 0 → insert, fee > 0 → `request_confirmation(payload={"acao": "reservar_area", "detalhes": {"area", "data"}})` with `skip_summarization`, on re-run insert only if `tool_confirmation.confirmed`, denial → no write; `cancelar_reserva(codigo=None, area=None, data=None)` own apartment only, not found → "não encontrada entre as suas reservas"; apartment always from `tool_context.state["apartamento"]`, no apartment argument
 - [ ] T011 [US1] Add specialist `reservas` in `src/aurora/agents.py` with the T010 tools; instruction: reply in PT-BR, call the action tool directly, never ask "você confirma?" in chat (plan rule 6); register in root `sub_agents`
 - [x] T012 [P] [US1] `tests/test_store.py::test_concurrent_insert_same_area_date` — Test: new, because distinct contract (write-time exclusivity, the only lock on G5 below the API): two concurrent `store` inserts for `salao-de-festas`/`2030-05-11` → exactly one active row, the other a refusal, no exception; plus a cancelled row keeps its code and a new insert gets a different code (literal expected codes)
 - [ ] T013 [US1] Run E5..E9 against the live API and fix until they pass
@@ -122,7 +122,7 @@ evaluator flow (E1..E15) is the acceptance check, run against the live API.
 
 **Independent Test**: E11
 
-- [ ] T018 [US3] Add visitor tools in `src/aurora/tools.py`: `listar_meus_visitantes()`; `autorizar_visitante(nome, data)` always via `request_confirmation(payload={"acao": "autorizar_visitante", "detalhes": {"nome", "data"}})`, insert only if confirmed; apartment from state
+- [x] T018 [US3] Add visitor tools in `src/aurora/tools.py`: `listar_meus_visitantes()`; `autorizar_visitante(nome, data)` always via `request_confirmation(payload={"acao": "autorizar_visitante", "detalhes": {"nome", "data"}})`, insert only if confirmed; apartment from state
 - [ ] T019 [US3] Add specialist `visitantes` in `src/aurora/agents.py` (same instruction rules as T011: PT-BR, no chat confirmation; callback attached); register in root
 - [ ] T020 [US3] Run E11 and fix until it passes
 
@@ -145,7 +145,7 @@ evaluator flow (E1..E15) is the acceptance check, run against the live API.
 **Independent Test**: E12
 
 - [x] T022 [US4] Implement `src/aurora/regulation.py`: parse `dados/regulamento.md` by `## Capítulo` headings into 14 chapters `{id (I..XIV), titulo, texto}` at import
-- [ ] T023 [US4] Add tool `consultar_regulamento(capitulo)` in `src/aurora/tools.py`: id validated against the parsed set, returns that chapter only (plan rule 3)
+- [x] T023 [US4] Add tool `consultar_regulamento(capitulo)` in `src/aurora/tools.py`: id validated against the parsed set, returns that chapter only (plan rule 3)
 - [ ] T024 [US4] Add specialist `regulamento` in `src/aurora/agents.py`: chapter ids and titles in its `instruction` only (not `description`), reply in PT-BR, callback attached; register in root; confirm root instruction has no regulation text
 - [ ] T025 [US4] Run E12: closing time 20h on Sundays; events contain only Chapter IV text
 
