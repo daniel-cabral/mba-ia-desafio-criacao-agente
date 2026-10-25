@@ -174,7 +174,7 @@ evaluator flow (E1..E15) is the acceptance check, run against the live API.
 
 ## Phase 10: Polish & Cross-Cutting Concerns
 
-- [ ] T029 [P] Write `scripts/evaluator_flow.py`: runs E1..E14 via HTTP against `localhost:8000` and prints each check (restart in E13 done by hand, script pauses)
+- [x] T029 [P] Write `scripts/evaluator_flow.py`: runs E1..E14 via HTTP against `localhost:8000` and prints each check (restart in E13 done by hand, script pauses)
 - [ ] T030 Replace `README.md` with sections Arquitetura (each agent, responsibility, how invoked, why transfer and not AgentTool), Garantias (G1..G5: file + excerpt + why it does not depend on the model), Como rodar (prerequisites, `GEMINI_API_KEY`, `uv sync`, `uv run aurora-restore`, `uv run aurora-api`); every reference must point to existing code
 - [x] T031 Remove the Sync Impact Report comment from `.specify/memory/constitution.md`
 - [ ] T032 Verify `dados/` is identical to upstream (`git diff upstream/main -- dados/` empty), no key versioned (`git ls-files` has no `.env`), `uv.lock` committed, ADK pinned
