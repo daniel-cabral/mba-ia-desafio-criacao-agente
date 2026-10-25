@@ -79,7 +79,7 @@ evaluator flow (E1..E15) is the acceptance check, run against the live API.
 - [x] T005 Implement `src/aurora/store.py`: `create_schema()` (WAL, `busy_timeout`); table `reservations` (`id INTEGER PRIMARY KEY AUTOINCREMENT`, `codigo TEXT UNIQUE NOT NULL`, `apartamento TEXT NOT NULL`, `area TEXT NOT NULL`, `data TEXT NOT NULL`, `status TEXT NOT NULL` in `ativa|cancelada`) with partial unique index `(area, data) WHERE status = 'ativa'`; table `visitors` (`id`, `apartamento`, `nome`, `data`, all NOT NULL); seed loaders for `dados/*.json` (read only); queries: active reservations by apartment, area/date occupied (bool only), insert reservation returning `AUR-{id:04d}` or a refusal on `IntegrityError`, cancel own reservation by code or area+date, insert/list visitors; every query function is `async` and wraps `sqlite3` in `asyncio.to_thread` (plan rule 2); `create_schema` and `seed` are sync (startup/restore only); exact signatures in "Interfaces" above
 - [x] T006 Implement `src/aurora/restore.py` `main()`: drop and recreate `reservations` and `visitors` (resets AUTOINCREMENT), load seed from `dados/`, delete all ADK sessions of `APP_NAME`
 - [x] T007 Implement `src/aurora/confirmations.py`: `pending(session)` = `adk_request_confirmation` calls in `session.events` with no later function response of the same id, mapped to `{"id", "acao", "detalhes"}` from `args.toolConfirmation.payload`; `answer_content(id, confirmed)` building a Content with only `FunctionResponse(name="adk_request_confirmation", id=id, response={"confirmed": confirmed})`
-- [ ] T008 Implement `src/aurora/agents.py`: root `LlmAgent` `aurora` (PT-BR, routes to specialists, no regulation text) with `sub_agents` list ready for specialists added per story
+- [x] T008 Implement `src/aurora/agents.py`: root `LlmAgent` `aurora` (PT-BR, routes to specialists, no regulation text) with `sub_agents` list ready for specialists added per story
 - [ ] T009 Implement `src/aurora/api.py`: lifespan calls `store.create_schema()` only (never seeds, plan rule 4); `DatabaseSessionService(DB_URL)`; Runner over `agents.root_agent`; per-session `asyncio.Lock`; routes per `contracts/api.md`: `POST /sessoes` (201, `state={"apartamento": ...}`), `POST /sessoes/{id}/mensagens`, `POST /sessoes/{id}/confirmacoes` (409 when id not in `confirmations.pending`, before calling the Runner), `GET /sessoes/{id}/eventos` (`event.model_dump(mode="json")`, in order), `GET /apartamentos/{n}/reservas`, `GET /apartamentos/{n}/visitantes`; `404` for unknown session, checked before the `409` check; `resposta` = final text of the run; `main()` runs uvicorn on `localhost:8000`
 
 **Checkpoint**: `uv run aurora-restore` + `uv run aurora-api` pass E1 and E2
@@ -93,7 +93,7 @@ evaluator flow (E1..E15) is the acceptance check, run against the live API.
 **Independent Test**: E5, E6, E7, E8, E9
 
 - [x] T010 [US1] Add reservation tools in `src/aurora/tools.py`: `verificar_disponibilidade(area, data)` → only `livre`/`ocupada`; `listar_minhas_reservas()`; `reservar_area(area, data)`: validate area id and `AAAA-MM-DD`, check availability first (occupied → refusal, no confirmation, FR-012a), fee 0 → insert, fee > 0 → `request_confirmation(payload={"acao": "reservar_area", "detalhes": {"area", "data"}})` with `skip_summarization`, on re-run insert only if `tool_confirmation.confirmed`, denial → no write; `cancelar_reserva(codigo=None, area=None, data=None)` own apartment only, not found → "não encontrada entre as suas reservas"; apartment always from `tool_context.state["apartamento"]`, no apartment argument
-- [ ] T011 [US1] Add specialist `reservas` in `src/aurora/agents.py` with the T010 tools; instruction: reply in PT-BR, call the action tool directly, never ask "você confirma?" in chat (plan rule 6); register in root `sub_agents`
+- [x] T011 [US1] Add specialist `reservas` in `src/aurora/agents.py` with the T010 tools; instruction: reply in PT-BR, call the action tool directly, never ask "você confirma?" in chat (plan rule 6); register in root `sub_agents`
 - [x] T012 [P] [US1] `tests/test_store.py::test_concurrent_insert_same_area_date` — Test: new, because distinct contract (write-time exclusivity, the only lock on G5 below the API): two concurrent `store` inserts for `salao-de-festas`/`2030-05-11` → exactly one active row, the other a refusal, no exception; plus a cancelled row keeps its code and a new insert gets a different code (literal expected codes)
 - [ ] T013 [US1] Run E5..E9 against the live API and fix until they pass
 
@@ -108,7 +108,7 @@ evaluator flow (E1..E15) is the acceptance check, run against the live API.
 **Independent Test**: E3, E4, E10
 
 - [x] T014 [US2] Implement `src/aurora/output_filter.py` `after_model_callback`: rewrite text parts only (never `function_call` args); load from the DB on every call the reservation codes (any status), visitor names and resident names of apartments other than `state["apartamento"]`, plus other apartment numbers matched standalone (not inside other numbers or codes); replace each with `[dado restrito]` (plan rule 5)
-- [ ] T015 [US2] Attach the callback to root and every specialist in `src/aurora/agents.py`
+- [x] T015 [US2] Attach the callback to root and every specialist in `src/aurora/agents.py`
 - [x] T016 [P] [US2] `tests/test_output_filter.py::test_redacts_other_apartments` — Test: new, because distinct contract (redaction rules): one parametrised test of `redact(text, terms=["RSV-4821", "Marina Duarte"], numbers=["302"])` over literal cases: `RSV-4821` and `Marina Duarte` replaced by `[dado restrito]`; standalone `302` replaced; `2030-03-02`, `AUR-0302` and `101` kept (callback wiring and function_call untouched-ness are covered by live E3/E4/E10, not here)
 - [ ] T017 [US2] Run E3, E4, E10 and fix until they pass
 
@@ -123,7 +123,7 @@ evaluator flow (E1..E15) is the acceptance check, run against the live API.
 **Independent Test**: E11
 
 - [x] T018 [US3] Add visitor tools in `src/aurora/tools.py`: `listar_meus_visitantes()`; `autorizar_visitante(nome, data)` always via `request_confirmation(payload={"acao": "autorizar_visitante", "detalhes": {"nome", "data"}})`, insert only if confirmed; apartment from state
-- [ ] T019 [US3] Add specialist `visitantes` in `src/aurora/agents.py` (same instruction rules as T011: PT-BR, no chat confirmation; callback attached); register in root
+- [x] T019 [US3] Add specialist `visitantes` in `src/aurora/agents.py` (same instruction rules as T011: PT-BR, no chat confirmation; callback attached); register in root
 - [ ] T020 [US3] Run E11 and fix until it passes
 
 ---
@@ -146,7 +146,7 @@ evaluator flow (E1..E15) is the acceptance check, run against the live API.
 
 - [x] T022 [US4] Implement `src/aurora/regulation.py`: parse `dados/regulamento.md` by `## Capítulo` headings into 14 chapters `{id (I..XIV), titulo, texto}` at import
 - [x] T023 [US4] Add tool `consultar_regulamento(capitulo)` in `src/aurora/tools.py`: id validated against the parsed set, returns that chapter only (plan rule 3)
-- [ ] T024 [US4] Add specialist `regulamento` in `src/aurora/agents.py`: chapter ids and titles in its `instruction` only (not `description`), reply in PT-BR, callback attached; register in root; confirm root instruction has no regulation text
+- [x] T024 [US4] Add specialist `regulamento` in `src/aurora/agents.py`: chapter ids and titles in its `instruction` only (not `description`), reply in PT-BR, callback attached; register in root; confirm root instruction has no regulation text
 - [ ] T025 [US4] Run E12: closing time 20h on Sundays; events contain only Chapter IV text
 
 ---
