@@ -20,6 +20,45 @@ evaluator flow (E1..E15) is the acceptance check, run against the live API.
 
 ---
 
+## Interfaces (fixed signatures, binding for all tasks)
+
+`src/aurora/config.py`
+- `ROOT_DIR: Path`, `DADOS_DIR: Path` (`ROOT_DIR / "dados"`), `DB_PATH: Path` (`ROOT_DIR / "data" / "aurora.db"`), `DB_URL: str` (`f"sqlite+aiosqlite:///{DB_PATH.as_posix()}"`)
+- `MODEL: str = "gemini-3.8-flash"`, `APP_NAME: str = "aurora"`, `USER_ID: str = "morador"`
+- `RETRY_OPTIONS: google.genai.types.HttpRetryOptions` (retries 429/503); loads `.env` on import
+
+`src/aurora/store.py` (every function takes keyword `db: Path | None = None`, default `config.DB_PATH`, so tests pass a temp path)
+- `AREAS: dict[str, dict]` (`id -> {"nome": str, "taxa": float}`), `APARTMENTS: dict[str, str]` (`numero -> morador`), loaded from `dados/` at import
+- `def create_schema(db=None) -> None` (sync; creates `data/` dir, WAL, tables and index if missing)
+- `def seed(db=None) -> None` (sync; drop + recreate `reservations` and `visitors`, load seed JSON)
+- `async def list_reservations(apartamento: str, db=None) -> list[dict]` → `[{"codigo", "area", "data"}]`, active only
+- `async def is_occupied(area: str, data: str, db=None) -> bool`
+- `async def insert_reservation(apartamento: str, area: str, data: str, db=None) -> str | None` → new code `AUR-{id:04d}`, or `None` when the partial unique index rejects it (`IntegrityError` caught)
+- `async def cancel_reservation(apartamento: str, *, codigo: str | None = None, area: str | None = None, data: str | None = None, db=None) -> str | None` → cancelled code, or `None` if no active reservation of that apartment matches
+- `async def insert_visitor(apartamento: str, nome: str, data: str, db=None) -> None`
+- `async def list_visitors(apartamento: str, db=None) -> list[dict]` → `[{"nome", "data"}]`
+- `async def foreign_data(apartamento: str, db=None) -> tuple[list[str], list[str]]` → (`terms`: reservation codes of any status, visitor names and resident names of other apartments; `numbers`: other apartment numbers)
+
+`src/aurora/regulation.py`
+- `CHAPTERS: dict[str, dict]` (`"I".."XIV" -> {"titulo": str, "texto": str}`, insertion order), parsed at import
+- `def chapter_index() -> str` (one line per chapter, `"IV: Piscina"`)
+- `def get_chapter(chapter_id: str) -> dict | None`
+
+`src/aurora/output_filter.py`
+- `def redact(text: str, terms: list[str], numbers: list[str]) -> str` (pure; terms replaced literally, numbers only when standalone: not adjacent to a digit, letter or `-`; replacement `[dado restrito]`)
+- `async def redact_other_apartments(callback_context: CallbackContext, llm_response: LlmResponse) -> LlmResponse | None` (reads `callback_context.state["apartamento"]`, calls `store.foreign_data`, rewrites text parts only, returns `None` when nothing changed)
+
+`src/aurora/confirmations.py`
+- `def pending(session: Session) -> list[dict]` → `[{"id", "acao", "detalhes"}]`
+- `def answer_content(confirmation_id: str, confirmed: bool) -> google.genai.types.Content`
+
+`src/aurora/tools.py`: async tools named as in `contracts/api.md`, each last param `tool_context: ToolContext`, each returning a `dict`
+`src/aurora/agents.py`: `root_agent: LlmAgent`
+`src/aurora/api.py`: `app: FastAPI`, `def main() -> None`
+`src/aurora/restore.py`: `def main() -> None` (`create_schema()`, `seed()`, then delete all sessions of `APP_NAME`/`USER_ID` via `DatabaseSessionService`)
+
+---
+
 ## Phase 1: Setup (Shared Infrastructure)
 
 **Purpose**: project skeleton and the go/no-go spike
@@ -37,7 +76,7 @@ evaluator flow (E1..E15) is the acceptance check, run against the live API.
 **Purpose**: storage, sessions, API skeleton, confirmation plumbing used by every story
 
 - [ ] T004 Implement `src/aurora/config.py`: load `.env`, constants `MODEL = "gemini-3.8-flash"`, `APP_NAME`, fixed `USER_ID`, paths `dados/` and `data/aurora.db`, `DB_URL = "sqlite+aiosqlite:///data/aurora.db"`, Gemini HTTP retry options for 429/503 (plan rule 7)
-- [ ] T005 Implement `src/aurora/store.py`: `create_schema()` (WAL, `busy_timeout`); table `reservations` (`id INTEGER PRIMARY KEY AUTOINCREMENT`, `codigo TEXT UNIQUE NOT NULL`, `apartamento TEXT NOT NULL`, `area TEXT NOT NULL`, `data TEXT NOT NULL`, `status TEXT NOT NULL` in `ativa|cancelada`) with partial unique index `(area, data) WHERE status = 'ativa'`; table `visitors` (`id`, `apartamento`, `nome`, `data`, all NOT NULL); seed loaders for `dados/*.json` (read only); queries: active reservations by apartment, area/date occupied (bool only), insert reservation returning `AUR-{id:04d}` or a refusal on `IntegrityError`, cancel own reservation by code or area+date, insert/list visitors; every public function is `async` and wraps `sqlite3` in `asyncio.to_thread` (plan rule 2)
+- [ ] T005 Implement `src/aurora/store.py`: `create_schema()` (WAL, `busy_timeout`); table `reservations` (`id INTEGER PRIMARY KEY AUTOINCREMENT`, `codigo TEXT UNIQUE NOT NULL`, `apartamento TEXT NOT NULL`, `area TEXT NOT NULL`, `data TEXT NOT NULL`, `status TEXT NOT NULL` in `ativa|cancelada`) with partial unique index `(area, data) WHERE status = 'ativa'`; table `visitors` (`id`, `apartamento`, `nome`, `data`, all NOT NULL); seed loaders for `dados/*.json` (read only); queries: active reservations by apartment, area/date occupied (bool only), insert reservation returning `AUR-{id:04d}` or a refusal on `IntegrityError`, cancel own reservation by code or area+date, insert/list visitors; every query function is `async` and wraps `sqlite3` in `asyncio.to_thread` (plan rule 2); `create_schema` and `seed` are sync (startup/restore only); exact signatures in "Interfaces" above
 - [ ] T006 Implement `src/aurora/restore.py` `main()`: drop and recreate `reservations` and `visitors` (resets AUTOINCREMENT), load seed from `dados/`, delete all ADK sessions of `APP_NAME`
 - [ ] T007 Implement `src/aurora/confirmations.py`: `pending(session)` = `adk_request_confirmation` calls in `session.events` with no later function response of the same id, mapped to `{"id", "acao", "detalhes"}` from `args.toolConfirmation.payload`; `answer_content(id, confirmed)` building a Content with only `FunctionResponse(name="adk_request_confirmation", id=id, response={"confirmed": confirmed})`
 - [ ] T008 Implement `src/aurora/agents.py`: root `LlmAgent` `aurora` (PT-BR, routes to specialists, no regulation text) with `sub_agents` list ready for specialists added per story
@@ -70,7 +109,7 @@ evaluator flow (E1..E15) is the acceptance check, run against the live API.
 
 - [ ] T014 [US2] Implement `src/aurora/output_filter.py` `after_model_callback`: rewrite text parts only (never `function_call` args); load from the DB on every call the reservation codes (any status), visitor names and resident names of apartments other than `state["apartamento"]`, plus other apartment numbers matched standalone (not inside other numbers or codes); replace each with `[dado restrito]` (plan rule 5)
 - [ ] T015 [US2] Attach the callback to root and every specialist in `src/aurora/agents.py`
-- [ ] T016 [P] [US2] `tests/test_output_filter.py::test_redacts_other_apartments` — Test: new, because distinct contract (redaction rules): one parametrised test over literal cases: `RSV-4821` and `Marina Duarte` removed for 101; standalone `302` removed, `2030-03-02`, `AUR-0302` and own `101` kept; function_call args untouched
+- [ ] T016 [P] [US2] `tests/test_output_filter.py::test_redacts_other_apartments` — Test: new, because distinct contract (redaction rules): one parametrised test of `redact(text, terms=["RSV-4821", "Marina Duarte"], numbers=["302"])` over literal cases: `RSV-4821` and `Marina Duarte` replaced by `[dado restrito]`; standalone `302` replaced; `2030-03-02`, `AUR-0302` and `101` kept (callback wiring and function_call untouched-ness are covered by live E3/E4/E10, not here)
 - [ ] T017 [US2] Run E3, E4, E10 and fix until they pass
 
 **Checkpoint**: US1 + US2 pass
