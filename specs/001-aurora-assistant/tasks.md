@@ -24,9 +24,9 @@ evaluator flow (E1..E15) is the acceptance check, run against the live API.
 
 **Purpose**: project skeleton and the go/no-go spike
 
-- [ ] T001 Create `pyproject.toml` with uv: `requires-python = ">=3.12"`, deps `google-adk[db]==2.13.0`, `fastapi`, `uvicorn`, `aiosqlite`, `python-dotenv`, dev dep `pytest`; package `src/aurora/`; scripts `aurora-api = "aurora.api:main"` and `aurora-restore = "aurora.restore:main"`; run `uv lock` to create `uv.lock`
-- [ ] T002 [P] Create `.env.example` with `GEMINI_API_KEY=` (no value); add `data/` to `.gitignore`
-- [ ] T003 Spike (throwaway, in the session scratchpad, NOT in the repo): one root agent + one sub_agent on `gemini-3.8-flash`, one tool calling `tool_context.request_confirmation(hint=, payload=)`, `DatabaseSessionService("sqlite+aiosqlite:///...")`; pause, build a NEW Runner + session service, send `FunctionResponse(name="adk_request_confirmation", id=<confirmation call id>, response={"confirmed": True})` alone; PASS = tool executes once, no 400 from Gemini, resend executes nothing. Also: two confirmations pending from one message, answered one at a time (each executes once, the other stays pending), and a pending confirmation that survives a new text message and is approved afterwards (FR-012b). Gate: stop and report if it fails
+- [x] T001 Create `pyproject.toml` with uv: `requires-python = ">=3.12"`, deps `google-adk[db]==2.13.0`, `fastapi`, `uvicorn`, `aiosqlite`, `python-dotenv`, dev dep `pytest`; package `src/aurora/`; scripts `aurora-api = "aurora.api:main"` and `aurora-restore = "aurora.restore:main"`; run `uv lock` to create `uv.lock`
+- [x] T002 [P] Create `.env.example` with `GEMINI_API_KEY=` (no value); add `data/` to `.gitignore`
+- [x] T003 Spike (throwaway, in the session scratchpad, NOT in the repo): one root agent + one sub_agent on `gemini-3.8-flash`, one tool calling `tool_context.request_confirmation(hint=, payload=)`, `DatabaseSessionService("sqlite+aiosqlite:///...")`; pause, build a NEW Runner + session service, send `FunctionResponse(name="adk_request_confirmation", id=<confirmation call id>, response={"confirmed": True})` alone; PASS = tool executes once, no 400 from Gemini, resend executes nothing. Also: two confirmations pending from one message, answered one at a time (each executes once, the other stays pending), and a pending confirmation that survives a new text message and is approved afterwards (FR-012b). Gate: stop and report if it fails
 
 **Checkpoint**: spike PASS before Phase 2
 
