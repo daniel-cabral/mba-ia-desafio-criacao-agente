@@ -167,7 +167,7 @@ evaluator flow (E1..E15) is the acceptance check, run against the live API.
 
 **Independent Test**: E14
 
-- [ ] T027 [US6] Stress offline, outside the repo, with the fake-LLM harness from research (`scratchpad/adk-src/probe.py` adapted to the real tools and DB): 20+ rounds of two concurrent approvals for the same area/date → always one reservation, both `200`, no "database is locked"; if it fails, apply the research R6 fallback (split DB files) with a PATCH amendment to the constitution
+- [x] T027 [US6] Stress offline, outside the repo, with the fake-LLM harness from research (`scratchpad/adk-src/probe.py` adapted to the real tools and DB): 20+ rounds of two concurrent approvals for the same area/date → always one reservation, both `200`, no "database is locked"; if it fails, apply the research R6 fallback (split DB files) with a PATCH amendment to the constitution
 - [ ] T028 [US6] Run E14 with two `curl` approvals joined by `&`
 
 ---
